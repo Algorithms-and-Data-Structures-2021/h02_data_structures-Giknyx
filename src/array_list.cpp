@@ -13,9 +13,8 @@ ArrayList::ArrayList(int capacity) : capacity_{capacity} {
     throw std::invalid_argument("ArrayList::capacity must be positive");
   }
 
-  auto array = new Element[capacity];
-  std::fill(array, array+capacity, Element::UNINITIALIZED);
-  data_ = array;
+  data_ = new Element[capacity];
+  std::fill(data_, data_+capacity, Element::UNINITIALIZED);
   size_ = 0;
 }
 
@@ -49,7 +48,7 @@ void ArrayList::Insert(int index, Element e) {
 
   assert(size_ < capacity_);  // я ни в коем случае не дам вам совершить ошибку всей вашей жизни
 
-  std::copy(data_[index], data_[size_], data_[index + 1]);
+  std::copy(data_+index, data_+size_, data_+index+1);
   data_[index] = e;
   size_++;
 }
@@ -61,26 +60,26 @@ void ArrayList::Set(int index, Element value) {
 
 Element ArrayList::Remove(int index) {
   internal::check_out_of_range(index, 0, size_);
-  Element res = data_[index];
-  std::copy(data_[index], data_[size_], data_[index - 1]);
+  auto res = data_[index];
+  std::copy(data_+index+1, data_+size_, data_+index);
   size_--;
   data_[size_] = Element::UNINITIALIZED;
   return res;
 }
 
 void ArrayList::Clear() {
-  std::fill(data_, data_+capacity_, Element::UNINITIALIZED);
+  std::fill(data_, data_+size_, Element::UNINITIALIZED);
+  size_ = 0;
 }
 
 Element ArrayList::Get(int index) const {
   internal::check_out_of_range(index, 0, size_);
-  Element res = data_[index];
-  return res;
+  return data_[index];
 }
 
 int ArrayList::IndexOf(Element e) const {
   int res = kNotFoundElementIndex;
-  for (int i = 0; i < capacity_; i++) {
+  for (int i = 0; i < size_; i++) {
       if (data_[i] == e) {
           res = i;
           break;
@@ -120,16 +119,16 @@ void ArrayList::resize(int new_capacity) {
   assert(new_capacity > capacity_);  // не ошибается тот, кто ничего не делает ...
 
   // 1. выделяем новый участок памяти
-  auto new_data = new Element[capacity_];
+  auto new_data = new Element[new_capacity];
 
   // 2. копируем данные на новый участок
-  std::copy(data_, data_ + size_ - 1, new_data);
+  std::copy(data_, data_ + size_, new_data);
 
   // 3. заполняем "свободные" ячейки памяти значением Element::UNINITIALIZED
   std::fill(new_data + size_, new_data + new_capacity, Element::UNINITIALIZED);
 
   // 4. высвобождаем старый участок памяти меньшего размера
-  delete data_;
+  delete[] data_;
 
   // 5. пересылаем указатель на новый участок памяти
   data_ = new_data;
